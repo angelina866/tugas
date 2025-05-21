@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard Penilaian Guru</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      padding: 20px;
+    }
+    h2 {
+      color: #2c3e50;
+      margin-top: 40px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background: #2575fc;
+      color: white;
+    }
+    input {
+      margin: 5px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #2575fc;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #1a5fe0;
+    }
+    .center {
+      text-align: center;
+    }
+    .delete-btn {
+      background-color: #e74c3c;
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    .delete-btn:hover {
+      background-color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="center">Dashboard Penilaian Guru</h1>
+
+  <h2>1. Kriteria Penilaian</h2>
+  <table id="kriteriaTable">
+    <tr><th>Kriteria</th><th>Keterangan</th></tr>
+  </table>
+  <input type="text" id="kriteriaInput" placeholder="Masukkan Kriteria" />
+  <button onclick="tambahKriteria()">Tambah Kriteria</button>
+
+  <h2>2. Bobot Kriteria</h2>
+  <table id="bobotTable">
+    <tr><th>Kriteria</th><th>Bobot</th><th>Keterangan</th></tr>
+  </table>
+  <input type="text" id="bobotKriteria" placeholder="Nama Kriteria" />
+  <input type="number" id="bobotNilai" placeholder="Bobot" />
+  <button onclick="tambahBobot()">Tambah Bobot</button>
+
+  <h2>3. Penilaian Guru</h2>
+  <table id="penilaianTable">
+    <tr><th>Nama Guru</th><th>Kriteria</th><th>Nilai</th><th>Komentar</th><th>Aksi</th></tr>
+  </table>
+  <input type="text" id="guruNama" placeholder="Nama Guru" />
+  <input type="text" id="guruKriteria" placeholder="Kriteria" />
+  <input type="number" id="guruNilai" placeholder="Nilai" />
+  <input type="text" id="guruKomentar" placeholder="Komentar" />
+  <button onclick="tambahPenilaian()">Tambah Penilaian</button>
+
+  <h2>4. Normalisasi</h2>
+  <table id="normalisasiTable">
+    <tr><th>Nama Guru</th><th>Kriteria</th><th>Nilai Ternormalisasi</th></tr>
+  </table>
+
+  <h2>5. Utility</h2>
+  <table id="utilityTable">
+    <tr><th>Nama Guru</th><th>Utility</th></tr>
+  </table>
+
+  <h2>6. Laporan Penilaian</h2>
+  <table id="laporanTable">
+    <tr><th>Nama Guru</th><th>Nilai Akhir</th><th>Komentar</th><th>Rekomendasi</th><th>Aksi</th></tr>
+  </table>
+  <input type="text" id="laporanNama" placeholder="Nama Guru" />
+  <input type="number" id="laporanNilai" placeholder="Nilai Akhir" />
+  <input type="text" id="laporanKomentar" placeholder="Komentar" />
+  <input type="text" id="laporanRekomendasi" placeholder="Rekomendasi" />
+  <button onclick="tambahLaporan()">Tambah Laporan</button>
+
+  <div class="center">
+    <button onclick="selesai()">Selesai</button>
+  </div>
+
+  <script>
+    function simpanData(key, data) {
+      localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    function muatData(key) {
+      return JSON.parse(localStorage.getItem(key)) || [];
+    }
+
+    // --- Kriteria Penilaian ---
+    function tambahKriteria() {
+      const input = document.getElementById("kriteriaInput");
+      const value = input.value.trim();
+      if (!value) return;
+      const list = muatData("kriteria");
+      list.push(value);
+      simpanData("kriteria", list);
+      tampilkanKriteria();
+      input.value = "";
+    }
+
+    function hapusKriteria(index) {
+      const list = muatData("kriteria");
+      list.splice(index, 1);
+      simpanData("kriteria", list);
+      tampilkanKriteria();
+    }
+
+    function tampilkanKriteria() {
+      const data = muatData("kriteria");
+      const table = document.getElementById("kriteriaTable");
+      table.innerHTML = "<tr><th>Kriteria</th><th>Aksi</th></tr>";
+      data.forEach((k, i) => {
+        const row = table.insertRow();
+        row.innerHTML = `<td>${k}</td><td><button class="delete-btn" onclick="hapusKriteria(${i})">Hapus</button></td>`;
+      });
+    }
+
+    // --- Bobot Kriteria ---
+    function tambahBobot() {
+      const kriteria = document.getElementById("bobotKriteria").value.trim();
+      const nilai = document.getElementById("bobotNilai").value;
+      if (!kriteria || !nilai) return;
+      const list = muatData("bobot");
+      list.push({ kriteria, nilai: parseFloat(nilai) });
+      simpanData("bobot", list);
+      tampilkanBobot();
+      hitungNormalisasiUtility();
+      document.getElementById("bobotKriteria").value = "";
+      document.getElementById("bobotNilai").value = "";
+    }
+
+    function hapusBobot(index) {
+      const list = muatData("bobot");
+      list.splice(index, 1);
+      simpanData("bobot", list);
+      tampilkanBobot();
+      hitungNormalisasiUtility();
+    }
+
+    function tampilkanBobot() {
+      const data = muatData("bobot");
+      const table = document.getElementById("bobotTable");
+      table.innerHTML = "<tr><th>Kriteria</th><th>Bobot</th><th>Aksi</th></tr>";
+      data.forEach((b, i) => {
+        const row = table.insertRow();
+        row.innerHTML = `<td>${b.kriteria}</td><td>${b.nilai}</td><td><button class="delete-btn" onclick="hapusBobot(${i})">Hapus</button></td>`;
+      });
+    }
+
+    // --- Penilaian Guru ---
+    function tambahPenilaian() {
+      const nama = document.getElementById("guruNama").value.trim();
+      const kriteria = document.getElementById("guruKriteria").value.trim();
+      const nilai = document.getElementById("guruNilai").value;
+      const komentar = document.getElementById("guruKomentar").value.trim();
+      if (!nama || !kriteria || !nilai) return;
+      const list = muatData("penilaian");
+      list.push({ nama, kriteria, nilai: parseFloat(nilai), komentar });
+      simpanData("penilaian", list);
+      tampilkanPenilaian();
+      hitungNormalisasiUtility();
+      document.getElementById("guruNama").value = "";
+      document.getElementById("guruKriteria").value = "";
+      document.getElementById("guruNilai").value = "";
+      document.getElementById("guruKomentar").value = "";
+    }
+
+    function hapusPenilaian(index) {
+      const list = muatData("penilaian");
+      list.splice(index, 1);
+      simpanData("penilaian", list);
+      tampilkanPenilaian();
+      hitungNormalisasiUtility();
+    }
+
+    function tampilkanPenilaian() {
+      const data = muatData("penilaian");
+      const table = document.getElementById("penilaianTable");
+      table.innerHTML = "<tr><th>Nama Guru</th><th>Kriteria</th><th>Nilai</th><th>Komentar</th><th>Aksi</th></tr>";
+      data.forEach((p, i) => {
+        const row = table.insertRow();
+        row.innerHTML = `<td>${p.nama}</td><td>${p.kriteria}</td><td>${p.nilai}</td><td>${p.komentar}</td><td><button class="delete-btn" onclick="hapusPenilaian(${i})">Hapus</button></td>`;
+      });
+    }
+
+    // --- Laporan Penilaian ---
+    function tambahLaporan() {
+      const nama = document.getElementById("laporanNama").value.trim();
+      const nilai = document.getElementById("laporanNilai").value;
+      const komentar = document.getElementById("laporanKomentar").value.trim();
+      const rekomendasi = document.getElementById("laporanRekomendasi").value.trim();
+      if (!nama || !nilai) return;
+      const list = muatData("laporan");
+      list.push({ nama, nilai: parseFloat(nilai), komentar, rekomendasi });
+      simpanData("laporan", list);
+      tampilkanLaporan();
+      document.getElementById("laporanNama").value = "";
+      document.getElementById("laporanNilai").value = "";
+      document.getElementById("laporanKomentar").value = "";
+      document.getElementById("laporanRekomendasi").value = "";
+    }
+
+    function hapusLaporan(index) {
+      const list = muatData("laporan");
+      list.splice(index, 1);
+      simpanData("laporan", list);
+      tampilkanLaporan();
+    }
+
+    function tampilkanLaporan() {
+      const data = muatData("laporan");
+      const table = document.getElementById("laporanTable");
+      table.innerHTML = "<tr><th>Nama Guru</th><th>Nilai Akhir</th><th>Komentar</th><th>Rekomendasi</th><th>Aksi</th></tr>";
+      data.forEach((l, i) => {
+        const row = table.insertRow();
+        row.innerHTML = `<td>${l.nama}</td><td>${l.nilai}</td><td>${l.komentar}</td><td>${l.rekomendasi}</td><td><button class="delete-btn" onclick="hapusLaporan(${i})">Hapus</button></td>`;
+      });
+    }
+
+    // --- Normalisasi & Utility ---
+    function hitungNormalisasiUtility() {
+      const penilaian = muatData("penilaian");
+      const bobotData = muatData("bobot");
+
+      // Kumpulkan nilai per kriteria
+      const nilaiPerKriteria = {};
+      penilaian.forEach(p => {
+        if (!nilaiPerKriteria[p.kriteria]) nilaiPerKriteria[p.kriteria] = [];
+        nilaiPerKriteria[p.kriteria].push(parseFloat(p.nilai));
+      });
+
+      // Hitung pembagi (akar kuadrat jumlah kuadrat nilai)
+      const pembagi = {};
+      for (let k in nilaiPerKriteria) {
+        const totalKuadrat = nilaiPerKriteria[k].reduce((sum, val) => sum + val * val, 0);
+        pembagi[k] = Math.sqrt(totalKuadrat);
+      }
+
+      // Normalisasi nilai
+      const normalisasi = penilaian.map(p => {
+        const norm = parseFloat(p.nilai) / (pembagi[p.kriteria] || 1);
+        return { nama: p.nama, kriteria: p.kriteria, nilai: norm.toFixed(3) };
+      });
+
+      // Tampilkan normalisasi
+      const normTable = document.getElementById("normalisasiTable");
+      normTable.innerHTML = "<tr><th>Nama Guru</th><th>Kriteria</th><th>Nilai Ternormalisasi</th></tr>";
+      normalisasi.forEach(n => {
+        const row = normTable.insertRow();
+        row.innerHTML = `<td>${n.nama}</td><td>${n.kriteria}</td><td>${n.nilai}</td>`;
+      });
+
+      // Hitung Utility per guru (jumlah bobot * nilai ternormalisasi per kriteria)
+      const guruUtility = {};
+      normalisasi.forEach(n => {
+        const bobot = bobotData.find(b => b.kriteria === n.kriteria)?.nilai || 0;
+        if (!guruUtility[n.nama]) guruUtility[n.nama] = 0;
+        guruUtility[n.nama] += bobot * parseFloat(n.nilai);
+      });
+
+      // Tampilkan utility
+      const utilityTable = document.getElementById("utilityTable");
+      utilityTable.innerHTML = "<tr><th>Nama Guru</th><th>Utility</th></tr>";
+      Object.keys(guruUtility).forEach(guru => {
+        const row = utilityTable.insertRow();
+        row.innerHTML = `<td>${guru}</td><td>${guruUtility[guru].toFixed(3)}</td>`;
+      });
+    }
+
+    // --- Tombol Selesai ---
+    function selesai() {
+      if (confirm("Apakah Anda yakin ingin selesai dan keluar? Semua data akan dihapus.")) {
+        localStorage.clear();
+        alert("Data telah dihapus. Anda akan dialihkan ke halaman login.");
+        window.location.href = "login.html";
+      }
+    }
+
+    // --- Inisialisasi tampilan ---
+    function init() {
+      tampilkanKriteria();
+      tampilkanBobot();
+      tampilkanPenilaian();
+      tampilkanLaporan();
+      hitungNormalisasiUtility();
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
